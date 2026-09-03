@@ -1,47 +1,60 @@
-# Map PayPal / Apple / Google Play / Stripe charges from Gmail
+# Inbox Rail Audit — Gmail payment-rail map (n8n)
 
-One pass over ~13 months of Gmail receipt **metadata**. Output is a payment-rail map — wallet, card last4, last charge, monthly vs dead — written to Google Sheets.
+Map **~13 months of Gmail receipt metadata** to **payment rails**, not a merchant CSV.
 
-Not another merchant CSV. Does **not** cancel subscriptions. No PDF download. No mailbox writes. No LLM.
+**Rails:** PayPal · Apple / Apple Pay · Google Play / Google Pay · Stripe / Paddle / Lemon Squeezy · SEPA / incasso · Klarna / Afterpay
 
-Free teaser in this repo. Full pack (agent `SKILL.md`, schema, sample report, license): **[$29 on Gumroad](https://rajankie.gumroad.com/l/fazpf)**.
+Output is a Google Sheet: amount, currency, cadence, last charge, card **last4**, and **VERIFIED / UNCERTAIN** evidence.
 
-## Install (free n8n path)
+- No PDF download
+- No mailbox writes (no labels, archive, send, drafts)
+- No LLM key
+- You cancel. The workflow only draws the map.
 
-1. Import [`n8n/inbox-rail-audit.json`](./n8n/inbox-rail-audit.json) into n8n Cloud or self-hosted.
-2. Attach Gmail OAuth2 (read-only is enough) to all seven Gmail nodes.
-3. Create a Google Sheet tab named `rails` and attach Sheets OAuth2.
-4. Set `WINDOW_AFTER` (~13 months back).
-5. Run once. Cancel by hand if you want.
+Free n8n workflow in this repo. Full pack (agent `SKILL.md` + schema + sample report): [Gumroad — $29](https://rajankie.gumroad.com/l/fazpf)
 
-## Gmail search cheatsheet
+## Who it is for
 
-See [`queries.md`](./queries.md) for copy-paste operators per rail (PayPal, Apple, Play, GPay, Stripe/Paddle, SEPA/incasso, Klarna).
+Solopreneurs with **PayPal + Apple + Play + Stripe on one Gmail** who cannot face 2,000 receipt mails. Also useful if you self-host n8n and want a read-only Gmail → Sheets audit.
 
-## What you get in the free teaser
+## Who it is not for
 
-| File | Purpose |
-| --- | --- |
-| `n8n/inbox-rail-audit.json` | Importable workflow (credentials = `REPLACE`) |
-| `queries.md` | Gmail operators |
-| `LICENSE.txt` | Personal use; no resale as competing template |
+- Bank-CSV users who already have a complete export (use that; Gmail will not see rent/health/telco SEPA unless those senders mailed a receipt)
+- Anyone who wants a bot that **auto-cancels** subscriptions — this does not, on purpose
 
-## Sample shape (fake data)
+## Install (n8n Cloud or self-hosted)
 
-| rail | merchant | amount | currency | cadence | last_charge | last4 | evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| stripe | Charting SaaS | 29.00 | USD | monthly | 2026-08-12 | 4242 | VERIFIED |
-| apple | iCloud+ | 2.99 | EUR | monthly | 2026-08-28 | — | VERIFIED |
-| paypal | Dead Gym Co | 39.00 | EUR | cancelled | 2025-11-03 | — | UNCERTAIN |
+1. Import [`n8n/inbox-rail-audit.json`](./n8n/inbox-rail-audit.json).
+2. Attach **Gmail OAuth2** (read-only is enough) to all seven Gmail nodes. Credentials in the JSON are placeholders (`REPLACE`).
+3. Create a Google Sheet tab named `rails`. Attach **Google Sheets OAuth2**. Paste the spreadsheet ID into **Append sheet** (`REPLACE_SHEET_ID`).
+4. Set `WINDOW_AFTER` in **Set window** (`YYYY/MM/DD`, default is a ~13-month window).
+5. Confirm every Gmail node has **Download Attachments = off**.
+6. Execute once. Read `evidence` before you cancel anything.
 
-## Full pack ($29)
+Gmail searches and the 200-thread cap: [`queries.md`](./queries.md).
 
-On Gumroad: agent `SKILL.md`, output schema, sample report, same n8n JSON, license for commercial reuse of the pack.
+## Free repo vs full pack
 
-→ https://rajankie.gumroad.com/l/fazpf
+| | This repo (free) | Full pack ($29) |
+| --- | --- | --- |
+| n8n workflow JSON | yes | yes |
+| Gmail query cheatsheet | yes | yes |
+| Agent `SKILL.md` + schema + sample report | no | yes |
+| License for commercial reuse of the pack | no | yes |
 
-## Honest limits
+Pack: https://rajankie.gumroad.com/l/fazpf
 
-- Only charges that hit Gmail. Rent/SEPA blind spots if not emailed.
-- 200-thread cap per rail query — under-sampled if a query hits the cap.
-- Human still cancels. No auto-send, no labels, no archive.
+## Limits (named, not hidden)
+
+- Household SEPA (rent, health insurance, telco, tax) is often **UNAVAILABLE in Gmail** — that is a blind spot, not “you have no rent”.
+- Keep EUR and USD separate. Do not invent FX.
+- A query that hits 200 threads is under-sampled; the workflow says so instead of pretending completeness.
+- “Card added / kaart toegevoegd” is not a charge. Stripe *seller* onboarding mail is not spend.
+
+## Adjacent pack
+
+**Gmail Renewal Radar** (SKU2, listing not live yet): merchant + cadence first — recurring vs one-off, price hike, cancel URL in snippet. Run this rail audit first if you do not yet know the rails.
+
+## License
+
+Workflow JSON and queries in this repo: personal use free. Do not resell as a competing template.
